@@ -1,4 +1,4 @@
-import updateToFirebase, { db, thisApp as firebaseApp } from "./updateToFirebase"
+import updateToFirebase, { db, app as firebaseApp } from "./updateToFirebase"
 import { combineReducers, createStore } from "redux"
 import { logReducers, LogToConsole } from "../reducers/logReducers"
 ;(async () => {

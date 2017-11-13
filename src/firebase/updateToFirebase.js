@@ -1,13 +1,13 @@
 const admin = require("firebase-admin")
 const { serviceAccount, databaseURL } = require("./firebase.config.json")
-export const thisApp = admin.initializeApp(
+export const app = admin.initializeApp(
   {
     credential: admin.credential.cert(serviceAccount),
     databaseURL
   },
   "updateToFirebase"
 )
-export const db = thisApp.database()
+export const db = app.database()
 
 const updateObjX = (getState, describe) => (mainBranch, objXBranch, objXIndexKey = "id") => async objX => {
   // Find if post exist
