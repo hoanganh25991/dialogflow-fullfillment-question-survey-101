@@ -1,11 +1,11 @@
 {
   "name": "sample-http",
   "version": "0.0.1",
-  "dependencies": {
+  "devDependencies": {
     "babel-cli": "^6.26.0",
     "babel-preset-node6": "^11.0.0"
   },
   "scripts":{
-    "build":"babel src --out-dir=dist"
+    "build":"rm -rf dist && babel src --out-dir=dist"
   }
 }
