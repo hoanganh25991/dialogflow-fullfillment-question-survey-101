@@ -4,7 +4,7 @@ import { logReducers, LogToConsole } from "../reducers/logReducers"
 ;(async () => {
   const store = createStore(combineReducers({ logState: logReducers }))
   const getLog = () => {
-    const { logState } = store.geState()
+    const { logState } = store.getState()
     return logState
   }
   const _updateToFirebase = updateToFirebase(null, store.dispatch)

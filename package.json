@@ -7,14 +7,15 @@
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
-    "babel-preset-node6": "^11.0.0",
+    "babel-preset-node7": "^1.5.0",
     "husky": "^0.14.3",
     "lint-staged": "^4.0.0",
     "prettier": "^1.4.4"
   },
   "scripts": {
     "precommit": "lint-staged",
-    "build": "rm -rf dist && babel src --out-dir=dist"
+    "build": "rm -rf dist && babel src --out-dir=dist",
+    "test": "babel-node scripts/run-test"
   },
   "lint-staged": {
     "*.js": [

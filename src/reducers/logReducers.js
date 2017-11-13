@@ -5,11 +5,11 @@
  * @returns {*}
  */
 export const logReducers = (state = { msg: "", level: 0 }, action) => {
-  const { type, ...others } = action
+  const { type } = action
   switch (type) {
     case "LOG":
     case "LOG_MSG": {
-      return { ...state, ...others }
+      return { ...state, ...action }
     }
     case "INCREASE_LOG_LEVEL": {
       const { level = 0 } = state
