@@ -73,7 +73,7 @@ const resSummary = sessionId => {
   const msg = `Go to summary ${pay} to ${pay * ratio}`
 
   return {
-    contextOut: [{ name: "summary", lifespan: 1, parameters: {} }],
+    contextOut: [{ name: "summary", lifespan: 2, parameters: {} }],
     speech: msg
   }
 }
@@ -81,7 +81,10 @@ const resAskQuestion = question => {
   const { text: questionStr, answers } = question
   const defaultAnswer = answers.reduce((carry, answer) => `${carry}/${answer.text}`, "Next/Previous")
   const defaultSpeech = `${questionStr}\n${defaultAnswer}`
-  return { contextOut: [{ name: "askQuestion", lifespan: 1, parameters: {} }], speech: defaultSpeech }
+  return {
+    contextOut: [{ name: "ask-question", lifespan: 2, parameters: {} }],
+    speech: defaultSpeech
+  }
 }
 
 exports.askQuestion = (req, res) => {
@@ -91,16 +94,25 @@ exports.askQuestion = (req, res) => {
   let question = getQuestion(sessionId)
 
   // Debug by sending null on nextQuestion
-  if (req.body.result.resolvedQuery === "end") question = null
+  // Actually, question get null when user finished them
+  if (req.body.result.resolvedQuery === "end") {
+    question = null
+  }
 
   const custom = question ? resAskQuestion(question) : resSummary(sessionId)
+
   let resObj = {
     displayText: "FromWebHook",
     source: "FromWebHook",
     ...custom
   }
 
-  if (req.body.result.resolvedQuery === "debug") resObj = { speech: JSON.stringify(req.body) }
+  if (req.body.result.resolvedQuery === "debug") {
+    resObj = {
+      speech: JSON.stringify(req.body),
+      contextOut: [{ name: "summary", lifespan: 2, parameters: {} }]
+    }
+  }
 
   res.send(JSON.stringify(resObj))
 }
