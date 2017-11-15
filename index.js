@@ -12,10 +12,17 @@ exports.askQuestion = (req, res) => {
       speech: "Default speech",
       messages: [
         {
-          // "platform": "facebook",
-          replies: ["Quick reply 1", "Quick reply 2", "Quick reply 3"],
-          title: "Quick Reply Title",
-          type: 2
+          buttons: [
+            {
+              postback: "Card Link URL or text",
+              text: "Card Link Title"
+            }
+          ],
+          imageUrl: "https://tinker.press/images/favicon.png",
+          platform: "facebook",
+          subtitle: "Card Subtitle",
+          title: "Card Title",
+          type: 1
         }
       ]
     })
