@@ -1,6 +1,6 @@
 "use strict"
 // https://us-central1-glass-turbine-148103.cloudfunctions.net/questionSurvey101
-const getAnswersSession = sessionId => [
+const apiAnswersSession = sessionId => [
   {
     _id: "xxx",
     questionId: "123456789",
@@ -23,8 +23,7 @@ const getAnswersSession = sessionId => [
     }
   }
 ]
-
-const apiNextQuestion = () => ({
+const apiNextQuestion = ({ order, questionIds }) => ({
   _id: "123456789",
   order: 5,
   text: "Which platforms do you wish to build for?",
@@ -46,41 +45,62 @@ const apiNextQuestion = () => ({
     }
   ]
 })
+const apiGetPaySummary = sessionId => {
+  const answersSession = apiAnswersSession(sessionId)
 
+  // Logic compute multiply & pay
+
+  // Fake return to test
+  return {
+    pay: 1000,
+    ratio: 1.35
+  }
+}
 const getQuestion = sessionId => {
   // Find user answer in history
-  const answersSession = getAnswersSession(sessionId)
-  const answerWithHighestOrder = answersSession.sort((a, b) => a.order < b.order)[0]
-  const currOrder = answerWithHighestOrder ? answerWithHighestOrder.order : 1
+  const answersSession = apiAnswersSession(sessionId)
+  const ansHasMaxOrder = answersSession.sort((a, b) => a.order < b.order)[0]
+  const currOrder = ansHasMaxOrder ? ansHasMaxOrder.order : 1
   const questionIds = answersSession.map(answer => answer.questionId)
 
-  console.log(currOrder, questionIds)
+  console.log("currOrder, questionIds", currOrder, questionIds)
 
-  return apiNextQuestion({ order: currOrder + 1, questionIds })
+  return apiNextQuestion({ order: currOrder, questionIds })
+}
+const resSummary = sessionId => {
+  // Should jump to summary
+  const { pay, ratio } = apiGetPaySummary(sessionId)
+  const msg = `Go to summary ${pay} to ${pay * ratio}`
+
+  return {
+    contextOut: [{ name: "summary", lifespan: 1, parameters: {} }],
+    speech: msg
+  }
+}
+const resAskQuestion = question => {
+  const { text: questionStr, answers } = question
+  const defaultAnswer = answers.reduce((carry, answer) => `${carry}/${answer.text}`, "Next/Previous")
+  const defaultSpeech = `${questionStr}\n${defaultAnswer}`
+  return { contextOut: [{ name: "askQuestion", lifespan: 1, parameters: {} }], speech: defaultSpeech }
 }
 
 exports.askQuestion = (req, res) => {
   res.setHeader("Content-Type", "application/json")
+
   const sessionId = req.body.sessionId
   let question = getQuestion(sessionId)
 
+  // Debug by sending null on nextQuestion
   if (req.body.result.resolvedQuery === "end") question = null
 
-  let resObj = {}
-
-  if (!question) {
-    // Should jump to summary
-    resObj = {
-      ...resObj,
-      contextOut: [{ name: "Summary", lifeSpan: 1 }],
-      speech: "Go to summary"
-    }
-  } else {
-    const { text: questionStr, answers } = question
-    const defaultAnswer = answers.reduce((carry, answer) => `${carry}/${answer.text}`, "Next/Previous")
-    const defaultSpeech = `${questionStr}\n${defaultAnswer}`
-    resObj = { ...resObj, speech: defaultSpeech }
+  const custom = question ? resAskQuestion(question) : resSummary(sessionId)
+  let resObj = {
+    displayText: "FromWebHook",
+    source: "FromWebHook",
+    ...custom
   }
+
+  if (req.body.result.resolvedQuery === "debug") resObj = { speech: JSON.stringify(req.body) }
 
   res.send(JSON.stringify(resObj))
 }
