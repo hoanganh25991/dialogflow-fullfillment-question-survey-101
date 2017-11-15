@@ -10,67 +10,14 @@ exports.askQuestion = (req, res) => {
   res.send(
     JSON.stringify({
       speech: "Default speech",
-      data: {
-        facebook: {
-          attachment: {
-            type: "template",
-            payload: {
-              template_type: "generic",
-              elements: [
-                {
-                  title: "Title: this is a title",
-                  image_url: "https://developers.google.com/actions/images/badges/XPM_BADGING_GoogleAssistant_VER.png",
-                  subtitle: "This is a subtitle",
-                  default_action: {
-                    type: "web_url",
-                    url: "https://assistant.google.com/"
-                  },
-                  buttons: [
-                    {
-                      type: "web_url",
-                      url: "https://assistant.google.com/",
-                      title: "This is a button"
-                    }
-                  ]
-                },
-                {
-                  title: "Title: this is a title",
-                  image_url: "https://developers.google.com/actions/images/badges/XPM_BADGING_GoogleAssistant_VER.png",
-                  subtitle: "This is a subtitle",
-                  default_action: {
-                    type: "web_url",
-                    url: "https://assistant.google.com/"
-                  },
-                  buttons: [
-                    {
-                      type: "web_url",
-                      url: "https://assistant.google.com/",
-                      title: "This is a button"
-                    }
-                  ]
-                },
-                {
-                  title: "Title: this is a title",
-                  image_url: "https://developers.google.com/actions/images/badges/XPM_BADGING_GoogleAssistant_VER.png",
-                  subtitle: "This is a subtitle",
-                  default_action: {
-                    type: "web_url",
-                    url: "https://assistant.google.com/"
-                  },
-                  buttons: [
-                    {
-                      type: "web_url",
-                      url: "https://assistant.google.com/",
-                      title: "This is a button"
-                    }
-                  ]
-                }
-              ]
-            }
-          }
+      messages: [
+        {
+          // "platform": "facebook",
+          replies: ["Quick reply 1", "Quick reply 2", "Quick reply 3"],
+          title: "Quick Reply Title",
+          type: 2
         }
-      },
-      displayText: reqStr
+      ]
     })
   )
 }
