@@ -16,10 +16,11 @@
     "prettier": "^1.4.4"
   },
   "scripts": {
+    "precommit": "lint-staged",
     "build": "rm -rf dist && babel src --out-dir=dist && cp src/api/config.json dist/api/config.json",
     "test": "babel-node scripts/run-test",
     "7zip": "7z a question-survey-101.zip dist index.js package.json",
-    "zip": "7z a question-survey-101.zip dist index.js package.json"
+    "buildnzip": "yarn build && yarn 7zip"
   },
   "lint-staged": {
     "*.js": [
