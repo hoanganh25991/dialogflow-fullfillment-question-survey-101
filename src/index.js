@@ -1,6 +1,9 @@
 import { apiAnswersSession, apiGetPaySummary, apiNextQuestion, apiUpdateAnswerSession } from "./api/index"
+import uuidv1 from "uuid/v1"
 
 const _ = console.log
+const ASK_QUESTION_CXT = "ask-question"
+const stopWords = ["cancel", "skip", "end", "esc"]
 
 const getNextQuestion = async answerSession => {
   // Find user answer in history
@@ -15,14 +18,25 @@ const getNextQuestion = async answerSession => {
 }
 const updateUserAnsForLastQues = (answerSession, userAns) => {
   const { answers } = answerSession
-  const unAnsQues = answers.filter(answer => typeof answer.answerTxt === "undefined")[0]
-  if (!unAnsQues) {
+  const processingAns = answers.filter(answer => typeof answer.answerTxt === "undefined")[0]
+  if (!processingAns) {
     _("Cant find last unanswered question")
     return
   }
 
+  const { answers: quesAnsArr } = processingAns
+
+  const matchedAns = quesAnsArr.filter(ans => ans.text === userAns)[0]
+
+  if (!matchedAns) {
+    _("Cant find matchedAns in question, quesAnsArr, userAns", quesAnsArr, userAns)
+    return
+  }
+
   // Update answer text
-  unAnsQues.answerTxt = userAns
+  processingAns.answerTxt = userAns
+  Object.assign(processingAns, matchedAns)
+  delete processingAns.text
 }
 const addNewQuesToAnsSession = (answerSession, question) => {
   const { answers } = answerSession
@@ -31,12 +45,40 @@ const addNewQuesToAnsSession = (answerSession, question) => {
     return
   }
   const newAnswer = {
+    ...question,
     questionId: question._id,
-    order: question.order,
-    questionTxt: question.text,
-    pay: 999
+    questionTxt: question.text
   }
+
+  delete newAnswer._id
+  delete newAnswer.text
+
   answers.push(newAnswer)
+}
+
+const resAskQuestion = async (question, sessionId) => {
+  const { text: questionStr, answers } = question
+  const defaultAnswer = answers.reduce((carry, answer) => `${carry}/${answer.text}`, "Next/Previous")
+  const defaultSpeech = `${questionStr}\n${defaultAnswer}`
+  const { summary } = await apiGetPaySummary(sessionId)
+  const messages = [
+    {
+      platform: "facebook",
+      speech: `Estimate summary: ${summary}`,
+      type: 0
+    },
+    {
+      platform: "facebook",
+      replies: answers.map(ans => ans.text),
+      title: questionStr,
+      type: 2
+    }
+  ]
+  return {
+    contextOut: [{ name: ASK_QUESTION_CXT, lifespan: 2, parameters: { sessionId } }],
+    speech: defaultSpeech,
+    messages
+  }
 }
 const resSummary = async sessionId => {
   // Should jump to summary
@@ -48,24 +90,7 @@ const resSummary = async sessionId => {
     speech: defaultSpeech
   }
 }
-const resAskQuestion = question => {
-  const { text: questionStr, answers } = question
-  const defaultAnswer = answers.reduce((carry, answer) => `${carry}/${answer.text}`, "Next/Previous")
-  const defaultSpeech = `${questionStr}\n${defaultAnswer}`
-  const messages = [
-    {
-      platform: "facebook",
-      replies: answers.map(ans => ans.text),
-      title: questionStr,
-      type: 2
-    }
-  ]
-  return {
-    contextOut: [{ name: "ask-question", lifespan: 1, parameters: {} }],
-    speech: defaultSpeech,
-    messages
-  }
-}
+
 const debugQuestion = (req, question) => {
   if (req.body.result.resolvedQuery !== "end") return question
   // Actually, question get null when user finished them
@@ -80,19 +105,33 @@ const debugResObj = (req, resObj) => {
   }
 }
 
+const stopConversation = (req, resObj) => {
+  const userAns = req.body.result.resolvedQuery
+  if (!stopWords.includes(userAns)) return resObj
+
+  return {
+    speech: "Bye bye.",
+    contextOut: []
+  }
+}
+
 export const askQuestion = async (req, res) => {
+  // const askQuestionContext = req.body.result.contexts.filter(context => context.name === ASK_QUESTION_CXT)[0]
+  // _("askQuestionContext, contexts", askQuestionContext, req.body.result.contexts)
+  // const sessionId = askQuestionContext && askQuestionContext.parameters.sessionId || uuidv1()
   const sessionId = req.body.sessionId
   const answerSession = (await apiAnswersSession(sessionId)) || { sessionId, answers: [] }
   const question = debugQuestion(req, await getNextQuestion(answerSession))
 
   // Update user ans for last question
-  updateUserAnsForLastQues(answerSession, req.body.result.resolvedQuery)
+  const userAns = req.body.result.resolvedQuery
+  updateUserAnsForLastQues(answerSession, userAns)
   addNewQuesToAnsSession(answerSession, question)
   await apiUpdateAnswerSession(answerSession)
 
   // Res
-  const whRes = question ? resAskQuestion(question) : await resSummary(sessionId)
-  const resObj = debugResObj(req, whRes)
+  const whRes = question ? await resAskQuestion(question) : await resSummary(sessionId)
+  const resObj = stopConversation(req, debugResObj(req, whRes))
 
   res.setHeader("Content-Type", "application/json")
   res.send(JSON.stringify(resObj))
