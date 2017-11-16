@@ -2,11 +2,6 @@ import { apiAnswersSession, apiGetPaySummary, apiNextQuestion, apiUpdateAnswerSe
 
 const _ = console.log
 
-/**
- * Get next question to ask
- * @param answerSession
- * @returns {Promise.<*>}
- */
 const getNextQuestion = async answerSession => {
   // Find user answer in history
   const { answers } = answerSession
@@ -18,12 +13,6 @@ const getNextQuestion = async answerSession => {
 
   return await apiNextQuestion({ order: currOrder, questionIds })
 }
-/**
- * Save user answer
- * @param answerSession
- * @param userAns
- * @returns
- */
 const updateUserAnsForLastQues = (answerSession, userAns) => {
   const { answers } = answerSession
   const unAnsQues = answers.filter(answer => typeof answer.answerTxt === "undefined")[0]
@@ -35,11 +24,6 @@ const updateUserAnsForLastQues = (answerSession, userAns) => {
   // Update answer text
   unAnsQues.answerTxt = userAns
 }
-/**
- * add new question to answer session
- * @param answerSession
- * @param question
- */
 const addNewQuesToAnsSession = (answerSession, question) => {
   const { answers } = answerSession
   if (!question) {
@@ -54,11 +38,6 @@ const addNewQuesToAnsSession = (answerSession, question) => {
   }
   answers.push(newAnswer)
 }
-/**
- * All questions answered, give use brief summary
- * @param sessionId
- * @returns {Promise.<{contextOut: [null], speech: string}>}
- */
 const resSummary = async sessionId => {
   // Should jump to summary
   const { summary, ratio } = await apiGetPaySummary(sessionId)
@@ -69,11 +48,6 @@ const resSummary = async sessionId => {
     speech: defaultSpeech
   }
 }
-/**
- * Build res to ask question
- * @param question
- * @returns {{contextOut: [null], speech: string}}
- */
 const resAskQuestion = question => {
   const { text: questionStr, answers } = question
   const defaultAnswer = answers.reduce((carry, answer) => `${carry}/${answer.text}`, "Next/Previous")
@@ -92,23 +66,11 @@ const resAskQuestion = question => {
     messages
   }
 }
-/**
- * Debug question
- * @param req
- * @param question
- * @returns {*}
- */
 const debugQuestion = (req, question) => {
   if (req.body.result.resolvedQuery !== "end") return question
   // Actually, question get null when user finished them
   return null
 }
-/**
- * Debug webhook response obj
- * @param req
- * @param resObj
- * @returns {*}
- */
 const debugResObj = (req, resObj) => {
   if (req.body.result.resolvedQuery !== "debug") return resObj
 
@@ -118,11 +80,6 @@ const debugResObj = (req, resObj) => {
   }
 }
 
-/**
- * Ask next question or summary
- * @param req
- * @param res
- */
 export const askQuestion = async (req, res) => {
   const sessionId = req.body.sessionId
   const answerSession = (await apiAnswersSession(sessionId)) || { sessionId, answers: [] }
