@@ -14,8 +14,7 @@
     "prettier": "^1.4.4"
   },
   "scripts": {
-    "build": "rm -rf dist && babel src --out-dir=dist",
-    "buildIndex": "rm -rf _index.js dist && babel index.js --out-file=_index.js",
+    "build": "rm -rf dist && babel src --out-dir=dist && cp src/api/config.json dist/api/config.json",
     "test": "babel-node scripts/run-test"
   },
   "lint-staged": {
