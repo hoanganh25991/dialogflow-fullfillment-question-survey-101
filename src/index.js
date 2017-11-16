@@ -52,7 +52,7 @@ const addNewQuesToAnsSession = (answerSession, question) => {
     questionId: question._id,
     order: question.order,
     questionTxt: question.text,
-    pay: question.pay
+    pay: 999
   }
   answers.push(newAnswer)
 }
@@ -138,6 +138,7 @@ export const askQuestion = async (req, res) => {
 
   // Get next question to ask
   const question = debugQuestion(req, await getNextQuestion(answerSession))
+  _("question", question)
 
   // Add to answer session
   addNewQuesToAnsSession(answerSession, question)
@@ -149,6 +150,8 @@ export const askQuestion = async (req, res) => {
   // Res
   const whRes  = question ? resAskQuestion(question) : resSummary(sessionId)
   const resObj = debugResObj(req, whRes)
+
+  _("resObj", resObj)
 
   res.setHeader("Content-Type", "application/json")
   res.send(JSON.stringify(resObj))
