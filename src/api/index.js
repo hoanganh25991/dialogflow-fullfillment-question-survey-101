@@ -1,6 +1,7 @@
 import axios from "axios"
 import config from "config.json"
 
+axios.defaults.timeout = 2000
 const {endpoint, questionApi, answerApi, summaryApi} = config
 
 export const apiAnswersSession = async sessionId => {
@@ -19,4 +20,8 @@ export const apiNextQuestion = async ({order, questionIds}) => {
   const res = await axios.post(`${endpoint}/${questionApi}/next`, {order, questionIds})
   const {question} = res
   return question
+}
+
+export const apiUpdateAnswerSession = async (answerSession) => {
+  await axios.put(`${endpoint}/${answerApi}/sessionId`, answerSession)
 }

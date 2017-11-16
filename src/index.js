@@ -1,19 +1,19 @@
-import {apiAnswersSession, apiGetPaySummary, apiNextQuestion} from "./api/index";
+import {apiAnswersSession, apiGetPaySummary, apiNextQuestion, apiUpdateAnswerSession} from "./api/index";
 const _ = console.log
 
 
 
 /**
  * Get next question to ask
- * @param sessionId
+ * @param answerSession
  * @returns {Promise.<*>}
  */
-const getQuestion = async sessionId => {
+const getNextQuestion = async answerSession => {
   // Find user answer in history
-  const answersSession = await apiAnswersSession(sessionId)
-  const ansHasMaxOrder = answersSession && answersSession.sort((a, b) => a.order < b.order)[0]
+  const {answers}      = answerSession
+  const ansHasMaxOrder = answers.sort((a, b) => a.order < b.order)[0]
   const currOrder      = ansHasMaxOrder ? ansHasMaxOrder.order : 1
-  const questionIds    = answersSession ? answersSession.map(answer => answer.questionId) : []
+  const questionIds    = answers.map(answer => answer.questionId)
 
   _("currOrder, questionIds", currOrder, questionIds)
 
@@ -21,6 +21,41 @@ const getQuestion = async sessionId => {
 }
 
 
+/**
+ * Save user answer
+ * @param answerSession
+ * @param userAns
+ * @returns
+ */
+const updateUserAnsForLastQues = (answerSession, userAns) => {
+  const {answers} = answerSession
+  const unAnsQues = answers.filter(answer => typeof answer.answerTxt === "undefined")[0]
+  if(!unAnsQues){
+    _("Cant find last unanswered question")
+    return
+  }
+
+  // Update answer text
+  unAnsQues.answerTxt = userAns
+}
+
+
+
+
+const addNewQuesToAnsSession = (answerSession, question) => {
+  const {answers} = answerSession
+  if(!question) {
+    _("Not add, question null")
+    return
+  }
+  const newAnswer = {
+    questionId: question._id,
+    order: question.order,
+    questionTxt: question.text,
+    pay: question.pay
+  }
+  answers.push(newAnswer)
+}
 
 
 /**
@@ -93,16 +128,28 @@ const debugResObj = (req, resObj) => {
  * @param req
  * @param res
  */
-export const askQuestion = (req, res) => {
-  res.setHeader("Content-Type", "application/json")
+export const askQuestion = async (req, res) => {
+  const sessionId     = req.body.sessionId
+  const answerSession = await apiAnswersSession(sessionId) || {sessionId, answers: []}
 
-  const sessionId = req.body.sessionId
-  let question    = getQuestion(sessionId)
-  question        = debugQuestion(req, question)
+  // Update user ans for last question
+  updateUserAnsForLastQues(answerSession, req.body.result.resolvedQuery)
+  _("answerSession u1", answerSession)
 
-  // Debug by sending null on nextQuestion
+  // Get next question to ask
+  const question = debugQuestion(req, await getNextQuestion(answerSession))
+
+  // Add to answer session
+  addNewQuesToAnsSession(answerSession, question)
+  _("answerSession u2", answerSession)
+
+  // Save
+  await apiUpdateAnswerSession(answerSession)
+
+  // Res
   const whRes  = question ? resAskQuestion(question) : resSummary(sessionId)
   const resObj = debugResObj(req, whRes)
 
+  res.setHeader("Content-Type", "application/json")
   res.send(JSON.stringify(resObj))
 }
