@@ -3,6 +3,7 @@ import uuidv1 from "uuid/v1"
 
 const _ = console.log
 const ASK_QUESTION_CXT = "ask-question"
+const SESSION_CXT = "session-cxt"
 const stopWords = ["cancel", "skip", "end", "esc"]
 
 const getNextQuestion = async answerSession => {
@@ -75,7 +76,10 @@ const resAskQuestion = async (question, sessionId) => {
     }
   ]
   return {
-    contextOut: [{ name: ASK_QUESTION_CXT, lifespan: 2, parameters: { sessionId } }],
+    contextOut: [
+      { name: ASK_QUESTION_CXT, lifespan: 1 },
+      { name: SESSION_CXT, lifespan: 2, parameters: { sessionId } }
+    ],
     speech: defaultSpeech,
     messages
   }
@@ -116,10 +120,10 @@ const stopConversation = (req, resObj) => {
 }
 
 export const askQuestion = async (req, res) => {
-  // const askQuestionContext = req.body.result.contexts.filter(context => context.name === ASK_QUESTION_CXT)[0]
-  // _("askQuestionContext, contexts", askQuestionContext, req.body.result.contexts)
-  // const sessionId = askQuestionContext && askQuestionContext.parameters.sessionId || uuidv1()
-  const sessionId = req.body.sessionId
+  const askQuestionContext = req.body.result.contexts.filter(context => context.name === SESSION_CXT)[0]
+  _("askQuestionContext, contexts", askQuestionContext, req.body.result.contexts)
+  const sessionId = (askQuestionContext && askQuestionContext.parameters.sessionId) || uuidv1()
+  // const sessionId = req.body.sessionId
   const answerSession = (await apiAnswersSession(sessionId)) || { sessionId, answers: [] }
   const question = debugQuestion(req, await getNextQuestion(answerSession))
 
@@ -130,7 +134,7 @@ export const askQuestion = async (req, res) => {
   await apiUpdateAnswerSession(answerSession)
 
   // Res
-  const whRes = question ? await resAskQuestion(question) : await resSummary(sessionId)
+  const whRes = question ? await resAskQuestion(question, sessionId) : await resSummary(sessionId)
   const resObj = stopConversation(req, debugResObj(req, whRes))
 
   res.setHeader("Content-Type", "application/json")
