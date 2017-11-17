@@ -13,7 +13,7 @@ const SUMMARY_ANSWER = "SUMMARY_ANSWER"
 
 const _ = console.log
 axios.defaults.timeout = 2000
-const { endpoint, questionApi, answerApi, summaryApi } = config
+const { endpoint, questionApi, answerApi } = config
 
 export const apiFindAns = async sessionId => {
   const res = await axios.post(`${endpoint}/${answerApi}`, { sessionId, type: FIND_ANSWER })
@@ -22,7 +22,7 @@ export const apiFindAns = async sessionId => {
 }
 
 export const apiGetSummary = async sessionId => {
-  const res = await axios.post(`${endpoint}/${summaryApi}`, { sessionId, type: SUMMARY_ANSWER })
+  const res = await axios.post(`${endpoint}/${answerApi}`, { sessionId, type: SUMMARY_ANSWER })
   const { summary, ratio } = res.data
   return { summary, ratio }
 }

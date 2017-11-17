@@ -4,16 +4,17 @@ import uuidv1 from "uuid/v1"
 const _ = console.log
 const ASK_QUESTION_CXT = "ask-question"
 const SESSION_CXT = "session-cxt"
+const DEBUG_CXT = "debug-cxt"
 const stopWords = ["cancel", "skip", "end", "esc"]
 
-const getNextQues = async answerSession => {
+const getNextQues = async ansSession => {
   // Find user answer in history
-  const { answers } = answerSession
+  const { answers } = ansSession
   const ansHasMaxOrder = answers.sort((a, b) => a.order < b.order)[0]
   const currOrder = ansHasMaxOrder ? ansHasMaxOrder.order : 1
   const questionIds = answers.map(answer => answer.questionId)
 
-  _("currOrder, questionIds", currOrder, questionIds)
+  _("[getNextQues] currOrder, questionIds", currOrder, questionIds)
 
   return await apiFindNextQues({ order: currOrder, questionIds })
 }
@@ -39,7 +40,10 @@ const addUserAns = (ansSession, lastQuestion, userAns) => {
 }
 
 const resAskQues = async (question, sessionId) => {
-  if (!question) return await resSummary(sessionId)
+  if (!question) {
+    _("[resAskQues] no question found, res summary")
+    return await resSummary(sessionId)
+  }
 
   const { text: questionStr, answers } = question
   const defaultAnswer = answers.reduce((carry, answer) => `${carry}/${answer.text}`, "Next/Previous")
@@ -100,12 +104,7 @@ const debugQues = (req, question) => {
 
 const debugResObj = (req, resObj) => {
   const { resolvedQuery: userAns } = req.body.result
-  return userAns === "debug"
-    ? {
-        speech: JSON.stringify(req.body),
-        contextOut: [{ name: "debug", lifespan: 1, parameters: {} }]
-      }
-    : resObj
+  return userAns === "debug" ? { ...resObj, contextOut: [{ name: DEBUG_CXT, lifespan: 100, parameters: {} }] } : resObj
 }
 
 const stopConversation = (req, resObj) => {
@@ -119,26 +118,35 @@ const stopConversation = (req, resObj) => {
 }
 
 export const askQuestion = async (req, res) => {
+  res.setHeader("Content-Type", "application/json")
+
   const { contexts } = req.body.result
   const sessionCxt = contexts.filter(context => context.name === SESSION_CXT)[0]
-
-  _("askQuestionContext, contexts", sessionCxt, req.body.result.contexts)
-
   const { sessionId = uuidv1(), lastQuestion = null } = (sessionCxt && sessionCxt.parameters) || {}
-  const ansSession = (await apiFindAns(sessionId)) || { sessionId, answers: [] }
-  const question = debugQues(req, await getNextQues(ansSession))
 
-  // Update user ans for last question
-  const { resolvedQuery: userAns } = req.body.result
-  addUserAns(ansSession, lastQuestion, userAns)
+  _("sessionCxt, contexts", sessionCxt, req.body.result.contexts)
 
-  // Response obj
-  const whRes = await resAskQues(question, sessionId)
-  const resObj = stopConversation(req, debugResObj(req, whRes))
+  try {
+    const ansSession = (await apiFindAns(sessionId)) || { sessionId, answers: [] }
+    const question = debugQues(req, await getNextQues(ansSession))
 
-  res.setHeader("Content-Type", "application/json")
-  res.send(JSON.stringify(resObj))
+    // Update user ans for last question
+    const { resolvedQuery: userAns } = req.body.result
+    addUserAns(ansSession, lastQuestion, userAns)
 
-  // Heavy task
-  await apiUpdateAns(ansSession)
+    // Response obj
+    const whRes = await resAskQues(question, sessionId)
+    const resObj = stopConversation(req, debugResObj(req, whRes))
+
+    res.send(JSON.stringify(resObj))
+
+    // Heavy task
+    await apiUpdateAns(ansSession)
+  } catch (err) {
+    const debug = contexts.filter(context => context.name === DEBUG_CXT)[0]
+    const speech = debug
+      ? `[ERR]: ${JSON.stringify(err)}`
+      : "Sorry, some errors happen, i cant get right response for you"
+    res.send(JSON.stringify({ speech }))
+  }
 }
