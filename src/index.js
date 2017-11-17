@@ -59,28 +59,33 @@ const resAskQues = async (question, sessionId) => {
 
   const messages = [
     {
-      platform: "facebook",
       speech: `Estimate summary: ${summary}`,
       type: 0
+    },
+    {
+      replies: answers.map(ans => ans.text),
+      title: questionStr,
+      type: 2
     }
-    // {
-    //   platform: "facebook",
-    //   replies: answers.map(ans => ans.text),
-    //   title: questionStr,
-    //   type: 2
-    // }
   ]
 
+  // Custom payload for each platform
+  // Facebook/Google+/Twitter...
   const data = {
-    facebook: {
-      text: questionStr,
-      quick_replies: answers.map(ans => ({
-        content_type: "text",
-        title: ans.text,
-        payload: ans.text,
-        image_url: ans.img_url
-      }))
-    }
+    facebook: [
+      {
+        text: `Estimate summary: ${summary}`
+      },
+      {
+        text: questionStr,
+        quick_replies: answers.map(ans => ({
+          content_type: "text",
+          title: ans.text,
+          payload: ans.text,
+          image_url: ans.img_url
+        }))
+      }
+    ]
   }
   return {
     contextOut: [
