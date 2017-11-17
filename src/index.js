@@ -104,8 +104,16 @@ const resSummary = async sessionId => {
 
   const messages = [
     {
-      platform: "facebook",
-      speech: `Summary ${summary} to ${summary * ratio}`,
+      speech: `Based on what you have described, you should budget about S$ ${summary} to S$ ${summary *
+        ratio} for your project.`,
+      type: 0
+    },
+    {
+      speech: `Please note that this is a rough estimate only, and excludes other costs such as hosting, maintenance and 3rd party costs.`,
+      type: 0
+    },
+    {
+      speech: `Arrange a free consultation with our human staff for a more accurate quote today!`,
       type: 0
     }
   ]
@@ -157,15 +165,14 @@ export const askQuestion = async (req, res) => {
     // Update user ans for last question
     const { resolvedQuery: userAns } = req.body.result
     addUserAns(ansSession, lastQuestion, userAns)
+    // Heavy task
+    await apiUpdateAns(ansSession)
 
     // Response obj
     const whRes = await resAskQues(question, sessionId)
     const resObj = stopConversation(req, debugResObj(req, whRes))
 
     res.send(JSON.stringify(resObj))
-
-    // Heavy task
-    await apiUpdateAns(ansSession)
   } catch (err) {
     const debug = contexts.filter(context => context.name === DEBUG_CXT)[0]
     const speech = debug
