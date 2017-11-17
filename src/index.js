@@ -98,11 +98,19 @@ const resAskQues = async (question, sessionId) => {
   }
 }
 const resSummary = async sessionId => {
+  // Get user ans session
+  const ansSession = await apiFindAns(sessionId)
+  const { answers = [] } = ansSession || {}
+
   // Should jump to summary
   const { summary, ratio } = await apiGetSummary(sessionId)
   const defaultSpeech = `Summary ${summary} to ${summary * ratio}`
 
   const messages = [
+    ...answers.filter(ans => ans.title).map(ans => ({
+      speech: ans.title,
+      type: 0
+    })),
     {
       speech: `Based on what you have described, you should budget about S$ ${summary} to S$ ${summary *
         ratio} for your project.`,
@@ -165,6 +173,7 @@ export const askQuestion = async (req, res) => {
     // Update user ans for last question
     const { resolvedQuery: userAns } = req.body.result
     addUserAns(ansSession, lastQuestion, userAns)
+
     // Heavy task
     await apiUpdateAns(ansSession)
 
