@@ -59,7 +59,7 @@ const resAskQues = async (question, sessionId) => {
 
   const messages = [
     {
-      speech: `Estimate summary: ${summary}`,
+      speech: `Estimate summary: S$${summary}`,
       type: 0
     },
     {
@@ -106,13 +106,22 @@ const resSummary = async sessionId => {
   const { summary, ratio } = await apiGetSummary(sessionId)
   const defaultSpeech = `Summary ${summary} to ${summary * ratio}`
 
+  const briefSummaryAns = answers.reduce((carry, ans) => {
+    carry += ans.title ? `${ans.title}\n` : ""
+    return carry
+  }, "")
+
   const messages = [
-    ...answers.filter(ans => ans.title).map(ans => ({
-      speech: ans.title,
-      type: 0
-    })),
+    // ...answers.filter(ans => ans.title).map(ans => ({
+    //   speech: ans.title,
+    //   type: 0
+    // })),
     {
-      speech: `Based on what you have described, you should budget about S$ ${summary} to S$ ${summary *
+      speech: briefSummaryAns,
+      type: 0
+    },
+    {
+      speech: `Based on what you have described, you should budget about S$${summary} to S$${summary *
         ratio} for your project.`,
       type: 0
     },
