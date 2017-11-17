@@ -48,18 +48,16 @@ const resAskQues = async (question, sessionId) => {
   }
 
   const { text: questionStr, answers } = question
-  const defaultAnswer = answers.reduce((carry, answer) => `${carry}/${answer.text}`, "Next/Previous")
+  const defaultAnswer = answers.reduce((carry, answer) => `${carry}/${answer.text}`, "")
   const defaultSpeech = `${questionStr}\n${defaultAnswer}`
+  const { summary } = await apiGetSummary(sessionId)
 
-  const summaryObj = await apiGetSummary(sessionId)
-
-  _("summaryObj", summaryObj)
-
-  const { summary } = summaryObj
+  _("summary", summary)
+  const sumMsg = `Estimate summary: S$${summary}`
 
   const messages = [
     {
-      speech: `Estimate summary: S$${summary}`,
+      speech: sumMsg,
       type: 0
     },
     {
@@ -74,7 +72,7 @@ const resAskQues = async (question, sessionId) => {
   const data = {
     facebook: [
       {
-        text: `Estimate summary: ${summary}`
+        text: sumMsg
       },
       {
         text: questionStr,
