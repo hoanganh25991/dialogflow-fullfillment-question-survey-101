@@ -5,16 +5,18 @@ const _ = console.log
 const ASK_QUESTION_CXT = "ask-question"
 const SESSION_CXT = "session-cxt"
 const DEBUG_CXT = "debug-cxt"
+const START_SURVEY_CXT = "start-survey"
 const stopWords = ["cancel", "skip", "end", "esc"]
 
-const getNextQues = async (ansSession, lastQuestion) => {
+const getNextQues = async (ansSession, _lastQuestion) => {
   // Find user answer in history
   const { answers } = ansSession
-  const { order = 1, _id = null } = lastQuestion || {}
+  const lastQuestion = _lastQuestion || {}
+  const { order = 1, _id = null } = lastQuestion
   const questionIds = answers.map(answer => answer.questionId)
   if (_id) questionIds.push(_id)
 
-  _("[getNextQues] currOrder, questionIds", order, questionIds)
+  _("[getNextQues] lastQuestion, ansSession, currOrder, questionIds", lastQuestion, ansSession, order, questionIds)
 
   return await apiFindNextQues({ order, questionIds })
 }
@@ -60,13 +62,13 @@ const resAskQues = async (question, sessionId) => {
       platform: "facebook",
       speech: `Estimate summary: ${summary}`,
       type: 0
-    },
-    {
-      platform: "facebook",
-      replies: answers.map(ans => ans.text),
-      title: questionStr,
-      type: 2
     }
+    // {
+    //   platform: "facebook",
+    //   replies: answers.map(ans => ans.text),
+    //   title: questionStr,
+    //   type: 2
+    // }
   ]
 
   const data = {
@@ -83,10 +85,10 @@ const resAskQues = async (question, sessionId) => {
   return {
     contextOut: [
       { name: ASK_QUESTION_CXT, lifespan: 1 },
-      { name: SESSION_CXT, lifespan: 2, parameters: { sessionId, lastQuestion: question } }
+      { name: SESSION_CXT, lifespan: 1, parameters: { sessionId, lastQuestion: question } }
     ],
     speech: defaultSpeech,
-    // messages,
+    messages,
     data
   }
 }
@@ -135,7 +137,11 @@ export const askQuestion = async (req, res) => {
 
   const { contexts } = req.body.result
   const sessionCxt = contexts.filter(context => context.name === SESSION_CXT)[0]
-  const { sessionId = uuidv1(), lastQuestion = null } = (sessionCxt && sessionCxt.parameters) || {}
+  const startSurveyCxt = contexts.filter(context => context.name === START_SURVEY_CXT)[0]
+  const mergedSession = startSurveyCxt ? startSurveyCxt : sessionCxt || {}
+
+  const { parameters = {} } = mergedSession
+  const { sessionId = uuidv1(), lastQuestion = null } = parameters
 
   _("sessionCxt, contexts", sessionCxt, req.body.result.contexts)
 
