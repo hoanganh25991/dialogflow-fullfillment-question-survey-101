@@ -68,13 +68,26 @@ const resAskQues = async (question, sessionId) => {
       type: 2
     }
   ]
+
+  const data = {
+    facebook: {
+      text: questionStr,
+      quick_replies: answers.map(ans => ({
+        content_type: "text",
+        title: ans.text,
+        payload: ans.text,
+        image_url: ans.img_url
+      }))
+    }
+  }
   return {
     contextOut: [
       { name: ASK_QUESTION_CXT, lifespan: 1 },
       { name: SESSION_CXT, lifespan: 2, parameters: { sessionId, lastQuestion: question } }
     ],
     speech: defaultSpeech,
-    messages
+    // messages,
+    data
   }
 }
 const resSummary = async sessionId => {
