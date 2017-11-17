@@ -7,6 +7,8 @@ const SESSION_CXT = "session-cxt"
 const DEBUG_CXT = "debug-cxt"
 const START_SURVEY_CXT = "start-survey"
 const stopWords = ["cancel", "skip", "end", "esc"]
+const ASK_AGAIN = "ASK_AGAIN"
+const ASK_NEXT = "ASK_NEXT"
 
 const getNextQues = async (ansSession, _lastQuestion) => {
   // Find user answer in history
@@ -21,14 +23,21 @@ const getNextQues = async (ansSession, _lastQuestion) => {
   return await apiFindNextQues({ order, questionIds })
 }
 const addUserAns = (ansSession, lastQuestion, userAns) => {
+  const next = { type: ASK_NEXT }
   const { answers } = ansSession
 
-  if (!lastQuestion) return _("Cant find last unanswered question")
+  if (!lastQuestion) {
+    _("Cant find last unanswered question")
+    return next
+  }
 
   const { answers: quesAns } = lastQuestion
   const matchedAns = quesAns.filter(ans => ans.text === userAns)[0]
 
-  if (!matchedAns) return _("Cant find matchedAns in question, quesAnsArr, userAns", quesAns, userAns)
+  if (!matchedAns) {
+    _("Cant find matchedAns in question, quesAnsArr, userAns", quesAns, userAns)
+    return { type: ASK_AGAIN }
+  }
 
   const newAns = {
     questionId: lastQuestion._id,
@@ -39,6 +48,8 @@ const addUserAns = (ansSession, lastQuestion, userAns) => {
   }
 
   answers.push(newAns)
+
+  return next
 }
 
 const resAskQues = async (question, sessionId) => {
@@ -179,8 +190,32 @@ export const askQuestion = async (req, res) => {
 
     // Update user ans for last question
     const { resolvedQuery: userAns } = req.body.result
-    addUserAns(ansSession, lastQuestion, userAns)
+    const { type } = addUserAns(ansSession, lastQuestion, userAns)
 
+    if (type === ASK_AGAIN) {
+      _("[Ask again], lastQuestion", lastQuestion)
+      const resObj = await resAskQues(lastQuestion, sessionId)
+      const { messages, data: { facebook } } = resObj
+
+      const askMsg = `Sorry, i dont understand your answer. Please say again`
+
+      resObj.messages = [
+        {
+          speech: askMsg,
+          type: 0
+        },
+        ...messages
+      ]
+      resObj.data.facebook = [
+        {
+          text: askMsg
+        },
+        ...facebook
+      ]
+      _("resObj", resObj)
+      res.send(JSON.stringify(resObj))
+      return
+    }
     // Heavy task
     await apiUpdateAns(ansSession)
 
