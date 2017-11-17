@@ -7,16 +7,16 @@ const SESSION_CXT = "session-cxt"
 const DEBUG_CXT = "debug-cxt"
 const stopWords = ["cancel", "skip", "end", "esc"]
 
-const getNextQues = async ansSession => {
+const getNextQues = async (ansSession, lastQuestion) => {
   // Find user answer in history
   const { answers } = ansSession
-  const ansHasMaxOrder = answers.sort((a, b) => a.order < b.order)[0]
-  const currOrder = ansHasMaxOrder ? ansHasMaxOrder.order : 1
+  const { order = 1, _id = null } = lastQuestion || {}
   const questionIds = answers.map(answer => answer.questionId)
+  if (_id) questionIds.push(_id)
 
-  _("[getNextQues] currOrder, questionIds", currOrder, questionIds)
+  _("[getNextQues] currOrder, questionIds", order, questionIds)
 
-  return await apiFindNextQues({ order: currOrder, questionIds })
+  return await apiFindNextQues({ order, questionIds })
 }
 const addUserAns = (ansSession, lastQuestion, userAns) => {
   const { answers } = ansSession
@@ -128,7 +128,7 @@ export const askQuestion = async (req, res) => {
 
   try {
     const ansSession = (await apiFindAns(sessionId)) || { sessionId, answers: [] }
-    const question = debugQues(req, await getNextQues(ansSession))
+    const question = debugQues(req, await getNextQues(ansSession, lastQuestion))
 
     // Update user ans for last question
     const { resolvedQuery: userAns } = req.body.result
