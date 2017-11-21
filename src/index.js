@@ -42,10 +42,14 @@ const addUserAns = (ansSession, lastQuestion, userAns) => {
   const newAns = {
     questionId: lastQuestion._id,
     questionTxt: lastQuestion.text,
-    order: lastQuestion.order,
+    ...lastQuestion,
     answerTxt: userAns,
     ...matchedAns
   }
+
+  delete newAns._id
+  delete newAns.text
+  delete newAns.__v
 
   answers.push(newAns)
 
@@ -225,7 +229,9 @@ export const askQuestion = async (req, res) => {
 
       _("[resObj]", resObj)
 
-      res.send(JSON.stringify(resObj))
+      const resObj2 = stopConversation(req, debugResObj(req, resObj))
+
+      res.send(JSON.stringify(resObj2))
       return
     }
     // Heavy task
