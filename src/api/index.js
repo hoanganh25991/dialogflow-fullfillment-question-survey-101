@@ -10,6 +10,7 @@ const GET_ALL_ANSWERS = "GET_ALL_ANSWERS"
 const FIND_ANSWER = "FIND_ANSWER"
 const UPDATE_ANSWER = "UPDATE_ANSWER"
 const SUMMARY_ANSWER = "SUMMARY_ANSWER"
+const CHOOSEN_PLATFORMS = "CHOOSEN_PLATFORMS"
 
 const _ = console.log
 axios.defaults.timeout = 2000
@@ -35,4 +36,8 @@ export const apiFindNextQues = async ({ order, questionIds }) => {
 
 export const apiUpdateAns = async answerSession => {
   await axios.post(`${endpoint}/${answerApi}`, { ...answerSession, type: UPDATE_ANSWER })
+}
+
+export const apiChoosenPlatforms = async sessionId => {
+  await axios.post(`${endpoint}/${answerApi}`, { sessionId, type: CHOOSEN_PLATFORMS })
 }

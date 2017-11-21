@@ -1,4 +1,4 @@
-import { apiFindAns, apiGetSummary, apiFindNextQues, apiUpdateAns } from "./api/index"
+import { apiFindAns, apiGetSummary, apiFindNextQues, apiUpdateAns, apiChoosenPlatforms } from "./api/index"
 import uuidv1 from "uuid/v1"
 
 const _ = console.log
@@ -84,6 +84,8 @@ const resAskQues = async (question, sessionId) => {
 
   // Custom payload for each platform
   // Facebook/Google+/Twitter...
+  const { platforms: choosenPlatforms } = await apiChoosenPlatforms(sessionId)
+
   const data = {
     facebook: [
       {
@@ -91,12 +93,20 @@ const resAskQues = async (question, sessionId) => {
       },
       {
         text: questionStr,
-        quick_replies: answers.map(ans => ({
-          content_type: "text",
-          title: ans.text,
-          payload: ans.text,
-          image_url: ans.img_url
-        }))
+        quick_replies: answers
+          .filter(ans => {
+            // Check if answer match platform condition
+            const { platform } = ans
+            if (!platform) return true
+            // Return if answer matched choosen platforms
+            return Object.keys(platform).reduce((carry, key) => carry && choosenPlatforms[key], true)
+          })
+          .map(ans => ({
+            content_type: "text",
+            title: ans.text,
+            payload: ans.text,
+            image_url: ans.img_url
+          }))
       }
     ]
   }
