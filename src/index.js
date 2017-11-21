@@ -145,7 +145,7 @@ const resSummary = async sessionId => {
           text: "Open Contact Form"
         }
       ],
-      imageUrl: "http://urltoimage.com",
+      imageUrl: "http://originallyus.sg/wp-content/uploads/2016/03/og_black.png",
       subtitle: "Fill up this little form and a human will get back prompto!",
       title: "Contact Form",
       type: 1
