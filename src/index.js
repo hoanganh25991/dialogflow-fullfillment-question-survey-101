@@ -84,7 +84,7 @@ const resAskQues = async (question, sessionId) => {
 
   // Custom payload for each platform
   // Facebook/Google+/Twitter...
-  const { platforms: choosenPlatforms } = await apiChoosenPlatforms(sessionId)
+  const choosenPlatforms = await apiChoosenPlatforms(sessionId)
 
   const data = {
     facebook: [

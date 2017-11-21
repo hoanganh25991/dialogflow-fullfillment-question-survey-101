@@ -39,5 +39,7 @@ export const apiUpdateAns = async answerSession => {
 }
 
 export const apiChoosenPlatforms = async sessionId => {
-  await axios.post(`${endpoint}/${answerApi}`, { sessionId, type: CHOOSEN_PLATFORMS })
+  const res = await axios.post(`${endpoint}/${answerApi}`, { sessionId, type: CHOOSEN_PLATFORMS })
+  const { platforms } = res.data
+  return platforms
 }
