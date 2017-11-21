@@ -137,6 +137,18 @@ const resSummary = async sessionId => {
     {
       speech: `Arrange a free consultation with our human staff for a more accurate quote today!`,
       type: 0
+    },
+    {
+      buttons: [
+        {
+          postback: "https://originallyus.sg/contact/",
+          text: "Open Contact Form"
+        }
+      ],
+      imageUrl: "http://urltoimage.com",
+      subtitle: "Fill up this little form and a human will get back prompto!",
+      title: "Contact Form",
+      type: 1
     }
   ]
 
@@ -172,7 +184,6 @@ const sayHello = resObj => {
   const { messages, data: { facebook = [] } } = resObj
 
   resObj.messages = [{ speech: helloMsg, type: 0 }, ...messages]
-
   resObj.data.facebook = [{ text: helloMsg }, ...facebook]
 
   _("[resObjs2]", resObj)
@@ -204,15 +215,16 @@ export const askQuestion = async (req, res) => {
 
     if (type === ASK_AGAIN) {
       _("[Ask again], lastQuestion", lastQuestion)
+      const askMsg = `Sorry, i dont understand your answer. Please say again`
+
       const resObj = await resAskQues(lastQuestion, sessionId)
       const { messages, data: { facebook = [] } } = resObj
 
-      const askMsg = `Sorry, i dont understand your answer. Please say again`
-
       resObj.messages = [{ speech: askMsg, type: 0 }, ...messages]
-
       resObj.data.facebook = [{ text: askMsg }, ...facebook]
+
       _("[resObj]", resObj)
+
       res.send(JSON.stringify(resObj))
       return
     }
