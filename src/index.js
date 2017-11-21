@@ -169,7 +169,7 @@ const stopConversation = (req, resObj) => {
 
 const sayHello = resObj => {
   const helloMsg = "Ok, let's work out the a ballpark for the app you want to build!"
-  const { messages, data: { facebook: [] } } = resObj
+  const { messages, data: { facebook = [] } } = resObj
 
   resObj.messages = [{ speech: helloMsg, type: 0 }, ...messages]
 
@@ -205,14 +205,14 @@ export const askQuestion = async (req, res) => {
     if (type === ASK_AGAIN) {
       _("[Ask again], lastQuestion", lastQuestion)
       const resObj = await resAskQues(lastQuestion, sessionId)
-      const { messages, data: { facebook: [] } } = resObj
+      const { messages, data: { facebook = [] } } = resObj
 
       const askMsg = `Sorry, i dont understand your answer. Please say again`
 
       resObj.messages = [{ speech: askMsg, type: 0 }, ...messages]
 
       resObj.data.facebook = [{ text: askMsg }, ...facebook]
-      _("resObj", resObj)
+      _("[resObj]", resObj)
       res.send(JSON.stringify(resObj))
       return
     }
@@ -224,8 +224,8 @@ export const askQuestion = async (req, res) => {
     const resObj = stopConversation(req, debugResObj(req, whRes))
 
     const started = !lastQuestion
-    // const resObj2 = started ? sayHello(resObj) : resObj
-    const resObj2 = resObj
+    const resObj2 = started ? sayHello(resObj) : resObj
+    // const resObj2 = resObj
 
     res.send(JSON.stringify(resObj2))
   } catch (err) {
