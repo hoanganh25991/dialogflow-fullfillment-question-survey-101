@@ -32,7 +32,7 @@ const addUserAns = (ansSession, lastQuestion, userAns) => {
   }
 
   const { answers: quesAns } = lastQuestion
-  const matchedAns = quesAns.filter(ans => ans.text === userAns)[0]
+  const matchedAns = quesAns.filter(ans => ans.text.toLowerCase().trim() === userAns.toLowerCase().trim())[0]
 
   if (!matchedAns) {
     _("Cant find matchedAns in question, quesAnsArr, userAns", quesAns, userAns)
@@ -121,10 +121,6 @@ const resSummary = async sessionId => {
   }, "")
 
   const messages = [
-    // ...answers.filter(ans => ans.title).map(ans => ({
-    //   speech: ans.title,
-    //   type: 0
-    // })),
     {
       speech: briefSummaryAns,
       type: 0
@@ -171,13 +167,27 @@ const stopConversation = (req, resObj) => {
     : resObj
 }
 
+const sayHello = resObj => {
+  const helloMsg = "Ok, let's work out the a ballpark for the app you want to build!"
+  const { messages, data: { facebook: [] } } = resObj
+
+  resObj.messages = [{ speech: helloMsg, type: 0 }, ...messages]
+
+  resObj.data.facebook = [{ text: helloMsg }, ...facebook]
+
+  _("[resObjs2]", resObj)
+
+  return resObj
+}
+
 export const askQuestion = async (req, res) => {
   res.setHeader("Content-Type", "application/json")
 
   const { contexts } = req.body.result
   const sessionCxt = contexts.filter(context => context.name === SESSION_CXT)[0]
-  const startSurveyCxt = contexts.filter(context => context.name === START_SURVEY_CXT)[0]
-  const mergedSession = startSurveyCxt ? startSurveyCxt : sessionCxt || {}
+  // const startSurveyCxt = contexts.filter(context => context.name === START_SURVEY_CXT)[0]
+  // const mergedSession = startSurveyCxt ? startSurveyCxt : (sessionCxt || {})
+  const mergedSession = sessionCxt || {}
 
   const { parameters = {} } = mergedSession
   const { sessionId = uuidv1(), lastQuestion = null } = parameters
@@ -195,23 +205,13 @@ export const askQuestion = async (req, res) => {
     if (type === ASK_AGAIN) {
       _("[Ask again], lastQuestion", lastQuestion)
       const resObj = await resAskQues(lastQuestion, sessionId)
-      const { messages, data: { facebook } } = resObj
+      const { messages, data: { facebook: [] } } = resObj
 
       const askMsg = `Sorry, i dont understand your answer. Please say again`
 
-      resObj.messages = [
-        {
-          speech: askMsg,
-          type: 0
-        },
-        ...messages
-      ]
-      resObj.data.facebook = [
-        {
-          text: askMsg
-        },
-        ...facebook
-      ]
+      resObj.messages = [{ speech: askMsg, type: 0 }, ...messages]
+
+      resObj.data.facebook = [{ text: askMsg }, ...facebook]
       _("resObj", resObj)
       res.send(JSON.stringify(resObj))
       return
@@ -223,7 +223,11 @@ export const askQuestion = async (req, res) => {
     const whRes = await resAskQues(question, sessionId)
     const resObj = stopConversation(req, debugResObj(req, whRes))
 
-    res.send(JSON.stringify(resObj))
+    const started = !lastQuestion
+    // const resObj2 = started ? sayHello(resObj) : resObj
+    const resObj2 = resObj
+
+    res.send(JSON.stringify(resObj2))
   } catch (err) {
     const debug = contexts.filter(context => context.name === DEBUG_CXT)[0]
     const speech = debug
