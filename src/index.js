@@ -65,16 +65,16 @@ const resAskQues = async (question, sessionId) => {
   const { text: questionStr, answers } = question
   const defaultAnswer = answers.reduce((carry, answer) => `${carry}/${answer.text}`, "")
   const defaultSpeech = `${questionStr}\n${defaultAnswer}`
-  const { summary } = await apiGetSummary(sessionId)
-
-  _("summary", summary)
-  const sumMsg = `Estimate summary: S$${summary}`
+  // const { summary } = await apiGetSummary(sessionId)
+  //
+  // _("summary", summary)
+  // const sumMsg = `Estimate summary: S$${summary}`
 
   const messages = [
-    {
-      speech: sumMsg,
-      type: 0
-    },
+    // {
+    //   speech: sumMsg,
+    //   type: 0
+    // },
     {
       replies: answers.map(ans => ans.text),
       title: questionStr,
@@ -88,9 +88,9 @@ const resAskQues = async (question, sessionId) => {
 
   const data = {
     facebook: [
-      {
-        text: sumMsg
-      },
+      // {
+      //   text: sumMsg
+      // },
       {
         text: questionStr,
         quick_replies: answers
@@ -127,7 +127,9 @@ const resSummary = async sessionId => {
 
   // Should jump to summary
   const { summary, ratio } = await apiGetSummary(sessionId)
-  const defaultSpeech = `Summary ${summary} to ${summary * ratio}`
+  const from = summary.toFixed(2)
+  const to = (summary * ratio).toFixed(2)
+  const defaultSpeech = `Summary ${from} to ${to}`
 
   const briefSummaryAns = answers.reduce((carry, ans) => {
     carry += ans.title ? `${ans.title}\n` : ""
@@ -140,8 +142,7 @@ const resSummary = async sessionId => {
       type: 0
     },
     {
-      speech: `Based on what you have described, you should budget about S$${summary} to S$${summary *
-        ratio} for your project.`,
+      speech: `Based on what you have described, you should budget about S$${from} to S$${to} for your project.`,
       type: 0
     },
     {
