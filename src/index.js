@@ -127,6 +127,9 @@ const resSummary = async sessionId => {
 
   // Should jump to summary
   const { summary, ratio } = await apiGetSummary(sessionId)
+
+  _("[resSummary] summary/ratio", summary, ratio)
+
   const from = summary.toFixed(2)
   const to = (summary * ratio).toFixed(2)
   const defaultSpeech = `Summary ${from} to ${to}`
@@ -210,6 +213,16 @@ export const askQuestion = async (req, res) => {
   res.setHeader("Content-Type", "application/json")
 
   const { contexts } = req.body.result
+
+  const hasAskQuesCxt = contexts.filter(cxt => cxt.name === ASK_QUESTION_CXT).length > 0
+
+  // This webhook currently only handle
+  /// ask-question in context
+  if (!hasAskQuesCxt) {
+    res.send(JSON.stringify({}))
+    return
+  }
+
   const sessionCxt = contexts.filter(context => context.name === SESSION_CXT)[0]
   // const startSurveyCxt = contexts.filter(context => context.name === START_SURVEY_CXT)[0]
   // const mergedSession = startSurveyCxt ? startSurveyCxt : (sessionCxt || {})
@@ -258,10 +271,9 @@ export const askQuestion = async (req, res) => {
 
     res.send(JSON.stringify(resObj2))
   } catch (err) {
+    _(err)
     const debug = contexts.filter(context => context.name === DEBUG_CXT)[0]
-    const speech = debug
-      ? `[ERR]: ${JSON.stringify(err)}`
-      : "Sorry, some errors happen, i cant get right response for you"
+    const speech = debug ? `[ERR]` : `Sorry, some errors happen, i cant get right response for you`
     res.send(JSON.stringify({ speech }))
   }
 }
